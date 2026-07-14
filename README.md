@@ -93,4 +93,4 @@ Atlas is free and open source. If it's useful to you and you'd like to support i
 
 ## License
 
-MIT - see [LICENSE](LICENSE).
+MIT - see [LICENSE](LICENSE.txt).
