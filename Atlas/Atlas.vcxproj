@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <SolutionDir Condition="'$(SolutionDir)'==''">$(ProjectDir)..\</SolutionDir>
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{36971dba-4851-44b8-b87d-87a7cd08de58}</ProjectGuid>
+    <RootNamespace>Atlas</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <AtlasIncludes>$(ProjectDir)Source;$(ProjectDir)Source\Core\Arena;$(ProjectDir)Source\Core;$(ProjectDir)Source\Core\Context;$(ProjectDir)Source\Core\Input;$(ProjectDir)Source\Text\Font;$(ProjectDir)Source\Text\Format;$(ProjectDir)Source\Text\Sheet;$(ProjectDir)Source\Interface\Layout;$(ProjectDir)Source\Interface\Style;$(ProjectDir)Source\Interface\Widgets;$(ProjectDir)Source\Interface\Desktop\Docking;$(ProjectDir)Source\Interface\Desktop\Frames;$(ProjectDir)Source\Ports\Canvas;$(ProjectDir)Source\Ports\Shaders;$(ProjectDir)Source\Ports\Platform\Native;$(ProjectDir)Source\Ports\Platform\Pictures;$(ProjectDir)Source\Ports\Graphics\DirectX11;$(ProjectDir)Source\Ports\Graphics\DirectX12;$(ProjectDir)Source\Ports\Graphics\OpenGL;$(ProjectDir)Source\Ports\Graphics\Vulkan</AtlasIncludes>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
+    <ConfigurationType Condition="'$(AtlasDynamic)'!='1'">StaticLibrary</ConfigurationType>
+    <ConfigurationType Condition="'$(AtlasDynamic)'=='1'">DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
+    <ConfigurationType Condition="'$(AtlasDynamic)'!='1'">StaticLibrary</ConfigurationType>
+    <ConfigurationType Condition="'$(AtlasDynamic)'=='1'">DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <OutDir>$(SolutionDir)Build\</OutDir>
+    <IntDir>$(SolutionDir)Intermediates\$(ProjectName)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(AtlasIncludes);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <PostBuildEvent>
+      <Command>powershell -NoProfile -Command "$From = '$(ProjectDir)Source'; $Till = '$(SolutionDir)Package\Include'; Remove-Item $Till -Recurse -Force -ErrorAction SilentlyContinue; Get-ChildItem -Recurse $From -Filter *.h | ForEach-Object { $Spot = Join-Path $Till $_.FullName.Substring( $From.Length ).TrimStart( '\' ); New-Item -ItemType Directory -Force ( Split-Path $Spot ) | Out-Null; Copy-Item $_.FullName $Spot -Force }; $Keep = '$(SolutionDir)Package\Library'; New-Item -ItemType Directory -Force $Keep | Out-Null; Copy-Item '$(TargetPath)' $Keep -Force"</Command>
+      <Message>Publishing the Atlas package (Include + Library)</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(VULKAN_SDK)'!=''">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories Condition="'$(Platform)'=='x64'">$(VULKAN_SDK)\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories Condition="'$(Platform)'=='Win32'">$(VULKAN_SDK)\Lib32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>delayimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <DelayLoadDLLs>shaderc_shared.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+    <ClCompile>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\Core\Arena\Arena.cpp" />
+    <ClCompile Include="Source\Core\Context\Context.cpp" />
+    <ClCompile Include="Source\Core\Input\Input.cpp" />
+    <ClCompile Include="Source\Interface\Desktop\Docking\Docking.cpp" />
+    <ClCompile Include="Source\Interface\Desktop\Frames\Frames.cpp" />
+    <ClCompile Include="Source\Interface\Layout\Layout.cpp" />
+    <ClCompile Include="Source\Interface\Style\Style.cpp" />
+    <ClCompile Include="Source\Interface\Widgets\Widgets.cpp" />
+    <ClCompile Include="Source\Ports\Canvas\Canvas.cpp" />
+    <ClCompile Include="Source\Ports\Graphics\DirectX11\DirectX11.cpp" />
+    <ClCompile Include="Source\Ports\Graphics\DirectX12\DirectX12.cpp" />
+    <ClCompile Include="Source\Ports\Graphics\OpenGL\OpenGL.cpp" />
+    <ClCompile Include="Source\Ports\Graphics\Vulkan\Vulkan.cpp" />
+    <ClCompile Include="Source\Ports\Platform\Native\Native.cpp" />
+    <ClCompile Include="Source\Ports\Platform\Pictures\Pictures.cpp" />
+    <ClCompile Include="Source\Ports\Shaders\Shaders.cpp" />
+    <ClCompile Include="Source\Text\Font\Font.cpp" />
+    <ClCompile Include="Source\Text\Format\Format.cpp" />
+    <ClCompile Include="Source\Text\Sheet\Sheet.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\Atlas.h" />
+    <ClInclude Include="Source\Core\Arena\Arena.h" />
+    <ClInclude Include="Source\Core\Context\Context.h" />
+    <ClInclude Include="Source\Core\Geometry.h" />
+    <ClInclude Include="Source\Core\Input\Input.h" />
+    <ClInclude Include="Source\Interface\Desktop\Docking\Docking.h" />
+    <ClInclude Include="Source\Interface\Desktop\Frames\Frames.h" />
+    <ClInclude Include="Source\Interface\Layout\Layout.h" />
+    <ClInclude Include="Source\Interface\Style\Style.h" />
+    <ClInclude Include="Source\Interface\Widgets\Widgets.h" />
+    <ClInclude Include="Source\Ports\Canvas\Canvas.h" />
+    <ClInclude Include="Source\Ports\Graphics\DirectX11\DirectX11.h" />
+    <ClInclude Include="Source\Ports\Graphics\DirectX12\DirectX12.h" />
+    <ClInclude Include="Source\Ports\Graphics\OpenGL\OpenGL.h" />
+    <ClInclude Include="Source\Ports\Graphics\Vulkan\Vulkan.h" />
+    <ClInclude Include="Source\Ports\Platform\Native\Native.h" />
+    <ClInclude Include="Source\Ports\Platform\Pictures\Pictures.h" />
+    <ClInclude Include="Source\Ports\Shaders\Shaders.h" />
+    <ClInclude Include="Source\Text\Font\Font.h" />
+    <ClInclude Include="Source\Text\Format\Format.h" />
+    <ClInclude Include="Source\Text\Sheet\Sheet.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\.clang-format" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

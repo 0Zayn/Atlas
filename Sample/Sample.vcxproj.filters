@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Hosts">
+      <UniqueIdentifier>{c3d40001-0000-4000-8000-000000000001}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Hosts\DirectX11">
+      <UniqueIdentifier>{c3d40001-0000-4000-8000-000000000002}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Hosts\DirectX12">
+      <UniqueIdentifier>{c3d40001-0000-4000-8000-000000000003}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Hosts\OpenGL">
+      <UniqueIdentifier>{c3d40001-0000-4000-8000-000000000004}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Hosts\Vulkan">
+      <UniqueIdentifier>{c3d40001-0000-4000-8000-000000000005}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\EntryPoint.cpp" />
+    <ClCompile Include="Source\Hosts\DirectX11\ElevenHost.cpp">
+      <Filter>Hosts\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Hosts\DirectX12\TwelveHost.cpp">
+      <Filter>Hosts\DirectX12</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Hosts\OpenGL\OpenGLHost.cpp">
+      <Filter>Hosts\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Hosts\Vulkan\VulkanHost.cpp">
+      <Filter>Hosts\Vulkan</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\Hosts\Hosts.h">
+      <Filter>Hosts</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Hosts\DirectX11\ElevenHost.h">
+      <Filter>Hosts\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Hosts\DirectX12\TwelveHost.h">
+      <Filter>Hosts\DirectX12</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Hosts\OpenGL\OpenGLHost.h">
+      <Filter>Hosts\OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Hosts\Vulkan\VulkanHost.h">
+      <Filter>Hosts\Vulkan</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\.clang-format" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,8 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="Atlas/Atlas.vcxproj" Id="36971dba-4851-44b8-b87d-87a7cd08de58" />
+  <Project Path="Sample/Sample.vcxproj" Id="4b1207e5-90b0-4c9e-a7d2-113355779902" />
+</Solution>

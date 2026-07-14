@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Core">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-000000000001}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Arena">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-000000000002}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Context">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-000000000003}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Geometry">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-000000000004}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Input">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-000000000005}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Text">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-000000000006}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Text\Font">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-000000000007}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Text\Format">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-000000000008}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Text\Sheet">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-000000000009}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Interface">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-00000000000a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Interface\Layout">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-00000000000b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Interface\Style">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-00000000000c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Interface\Widgets">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-00000000000d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Interface\Desktop">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-00000000000e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Interface\Desktop\Docking">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-00000000000f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Interface\Desktop\Frames">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-000000000010}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Ports">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-000000000011}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Ports\Canvas">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-000000000012}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Ports\Shaders">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-000000000013}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Ports\Platform">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-000000000014}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Ports\Platform\Native">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-000000000015}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Ports\Platform\Pictures">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-000000000016}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Ports\Graphics">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-000000000017}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Ports\Graphics\DirectX11">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-000000000018}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Ports\Graphics\DirectX12">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-000000000019}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Ports\Graphics\OpenGL">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-00000000001a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Ports\Graphics\Vulkan">
+      <UniqueIdentifier>{b2c30001-0000-4000-8000-00000000001b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\Core\Arena\Arena.cpp">
+      <Filter>Core\Arena</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Context\Context.cpp">
+      <Filter>Core\Context</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Core\Input\Input.cpp">
+      <Filter>Core\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Interface\Desktop\Docking\Docking.cpp">
+      <Filter>Interface\Desktop\Docking</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Interface\Desktop\Frames\Frames.cpp">
+      <Filter>Interface\Desktop\Frames</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Interface\Layout\Layout.cpp">
+      <Filter>Interface\Layout</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Interface\Style\Style.cpp">
+      <Filter>Interface\Style</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Interface\Widgets\Widgets.cpp">
+      <Filter>Interface\Widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Ports\Canvas\Canvas.cpp">
+      <Filter>Ports\Canvas</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Ports\Graphics\DirectX11\DirectX11.cpp">
+      <Filter>Ports\Graphics\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Ports\Graphics\DirectX12\DirectX12.cpp">
+      <Filter>Ports\Graphics\DirectX12</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Ports\Graphics\OpenGL\OpenGL.cpp">
+      <Filter>Ports\Graphics\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Ports\Graphics\Vulkan\Vulkan.cpp">
+      <Filter>Ports\Graphics\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Ports\Platform\Native\Native.cpp">
+      <Filter>Ports\Platform\Native</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Ports\Platform\Pictures\Pictures.cpp">
+      <Filter>Ports\Platform\Pictures</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Ports\Shaders\Shaders.cpp">
+      <Filter>Ports\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Text\Font\Font.cpp">
+      <Filter>Text\Font</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Text\Format\Format.cpp">
+      <Filter>Text\Format</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Text\Sheet\Sheet.cpp">
+      <Filter>Text\Sheet</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\Atlas.h" />
+    <ClInclude Include="Source\Core\Arena\Arena.h">
+      <Filter>Core\Arena</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Context\Context.h">
+      <Filter>Core\Context</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Input\Input.h">
+      <Filter>Core\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Interface\Desktop\Docking\Docking.h">
+      <Filter>Interface\Desktop\Docking</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Interface\Desktop\Frames\Frames.h">
+      <Filter>Interface\Desktop\Frames</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Interface\Layout\Layout.h">
+      <Filter>Interface\Layout</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Interface\Style\Style.h">
+      <Filter>Interface\Style</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Interface\Widgets\Widgets.h">
+      <Filter>Interface\Widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Ports\Canvas\Canvas.h">
+      <Filter>Ports\Canvas</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Ports\Graphics\DirectX11\DirectX11.h">
+      <Filter>Ports\Graphics\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Ports\Graphics\DirectX12\DirectX12.h">
+      <Filter>Ports\Graphics\DirectX12</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Ports\Graphics\OpenGL\OpenGL.h">
+      <Filter>Ports\Graphics\OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Ports\Graphics\Vulkan\Vulkan.h">
+      <Filter>Ports\Graphics\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Ports\Platform\Native\Native.h">
+      <Filter>Ports\Platform\Native</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Ports\Platform\Pictures\Pictures.h">
+      <Filter>Ports\Platform\Pictures</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Ports\Shaders\Shaders.h">
+      <Filter>Ports\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Text\Font\Font.h">
+      <Filter>Text\Font</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Text\Format\Format.h">
+      <Filter>Text\Format</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Text\Sheet\Sheet.h">
+      <Filter>Text\Sheet</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Geometry.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\.clang-format" />
+  </ItemGroup>
+</Project>
