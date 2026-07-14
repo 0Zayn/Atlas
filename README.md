@@ -10,7 +10,7 @@ Atlas draws an entire UI with windows, docking, tabs, menus, tables, charts, a c
 
 ## Features
 
-- **Every common widget** - Buttons, checks, toggles, radios, sliders, drags, spinners, single- and multi-line text (selection, clipboard, undo), combo, segmented control, trees, collapsibles, lists, tables with resizable columns, tabs, menus, popups, tooltips, plots/histograms/pie charts, HSV color picker.
+- **Every common widget** - Buttons, checks, toggles, radios, sliders, drags, spinners, single and multi-line text (selection, clipboard, undo), combo, segmented control, trees, collapsibles, lists, tables with resizable columns, tabs, menus, popups, tooltips, plots/histograms/pie charts, HSV color picker.
 - **Docking** - Anchor pills, floating windows, tabbed islands, splitters and layout saving.
 - **Four backends, one API** - Support for DirectX 11/12, OpenGL 4.3, and Vulkan.
 - **Universal shaders** - Write one effect body, run it on HLSL and GLSL automatically.
