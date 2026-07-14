@@ -22,9 +22,9 @@ Atlas draws an entire UI with windows, docking, tabs, menus, tables, charts, a c
 
 |                    Light theme & live theming                     |                              Docked & compact                              |
 | :---------------------------------------------------------------: | :------------------------------------------------------------------------: |
-|    <img src="Assets/Light.png" alt="Light theme with the appearance panel" height="700">     | <img src="Assets/Light%20Compact.png" alt="Windows docked into a compact tabbed island" height="700"> |
+|    <img src="Assets/Light.png" alt="Light theme with the appearance panel" height="300">     | <img src="Assets/Light%20Compact.png" alt="Windows docked into a compact tabbed island" height="300"> |
 |                        **Charts & plots**                         |                         **Trees, lists & tables**                          |
-| <img src="Assets/Graphs.png" alt="Pie, donut, line, area and histogram charts" height="700"> |      <img src="Assets/Data.png" alt="Scene graph tree, list and a resizable table" height="700">      |
+| <img src="Assets/Graphs.png" alt="Pie, donut, line, area and histogram charts" height="300"> |      <img src="Assets/Data.png" alt="Scene graph tree, list and a resizable table" height="300">      |
 
 ## Requirements
 
