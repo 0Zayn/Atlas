@@ -10,7 +10,7 @@ Atlas draws an entire UI with windows, docking, tabs, menus, tables, charts, a c
 
 ## Features
 
-- **Every common widget** - Buttons, checks, toggles, radios, sliders, drags, spinners, single- and multi-line text (selection, clipboard, undo), combo, segmented control, trees, collapsibles, lists, tables with resizable columns, tabs, menus, popups, tooltips, plots/histograms/pie charts, HSV color picker.
+- **Every common widget** - Buttons, checks, toggles, radios, sliders, drags, spinners, single and multi-line text (selection, clipboard, undo), combo, segmented control, trees, collapsibles, lists, tables with resizable columns, tabs, menus, popups, tooltips, plots/histograms/pie charts, HSV color picker.
 - **Docking** - Anchor pills, floating windows, tabbed islands, splitters and layout saving.
 - **Four backends, one API** - Support for DirectX 11/12, OpenGL 4.3, and Vulkan.
 - **Universal shaders** - Write one effect body, run it on HLSL and GLSL automatically.
@@ -22,9 +22,9 @@ Atlas draws an entire UI with windows, docking, tabs, menus, tables, charts, a c
 
 |                    Light theme & live theming                     |                              Docked & compact                              |
 | :---------------------------------------------------------------: | :------------------------------------------------------------------------: |
-|    ![Light theme with the appearance panel](Assets/Light.png)     | ![Windows docked into a compact tabbed island](Assets/Light%20Compact.png) |
+|    <img src="Assets/Light.png" alt="Light theme with the appearance panel" height="300">     | <img src="Assets/Light%20Compact.png" alt="Windows docked into a compact tabbed island" height="300"> |
 |                        **Charts & plots**                         |                         **Trees, lists & tables**                          |
-| ![Pie, donut, line, area and histogram charts](Assets/Graphs.png) |      ![Scene graph tree, list and a resizable table](Assets/Data.png)      |
+| <img src="Assets/Graphs.png" alt="Pie, donut, line, area and histogram charts" height="300"> |      <img src="Assets/Data.png" alt="Scene graph tree, list and a resizable table" height="300">      |
 
 ## Requirements
 
@@ -93,4 +93,4 @@ Atlas is free and open source. If it's useful to you and you'd like to support i
 
 ## License
 
-MIT - see [LICENSE](LICENSE).
+MIT - see [LICENSE](LICENSE.txt).

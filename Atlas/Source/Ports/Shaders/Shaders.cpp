@@ -19,7 +19,7 @@ struct CInstance
     float Softness;
     float Inflate;
 
-    uint Reserved;
+    float Spare;
 };
 
 StructuredBuffer< CInstance > Instances : register( t0 );
@@ -40,7 +40,7 @@ struct CFragment
     float2 Extent : TEXCOORD1;
     float2 Source : TEXCOORD2;
 
-    nointerpolation float3 Shape : TEXCOORD3;
+    nointerpolation float4 Shape : TEXCOORD3;
     nointerpolation uint Flags : TEXCOORD4;
     nointerpolation float4 Extra : TEXCOORD5;
 };
@@ -67,7 +67,7 @@ CFragment MainVertex( uint Vertex : SV_VertexID, uint Item : SV_InstanceID )
     Fragment.Local = Limited - Instance.Bounds.xy - Instance.Bounds.zw * 0.5;
     Fragment.Extent = Instance.Bounds.zw * 0.5 - Instance.Inflate;
     Fragment.Source = Instance.Source.xy + Ratio * Instance.Source.zw;
-    Fragment.Shape = float3( Instance.Rounding, Instance.Thickness, Instance.Softness );
+    Fragment.Shape = float4( Instance.Rounding, Instance.Thickness, Instance.Softness, Instance.Spare );
 
     Fragment.Flags = Instance.Flags;
     Fragment.Extra = Instance.Source;
@@ -96,7 +96,7 @@ struct CFragment
     float2 Extent : TEXCOORD1;
     float2 Source : TEXCOORD2;
 
-    nointerpolation float3 Shape : TEXCOORD3;
+    nointerpolation float4 Shape : TEXCOORD3;
     nointerpolation uint Flags : TEXCOORD4;
     nointerpolation float4 Extra : TEXCOORD5;
 };
@@ -110,6 +110,30 @@ struct CFragment
 
 #define Fract frac
 #define AtlasSample( Where ) Sheet.Sample( Smooth, Where )
+
+float PolygonField( float2 Point, float2 First, float2 Second, float2 Third, float2 Fourth )
+{
+    float2 Corners[ 4 ] = { First, Second, Third, Fourth };
+
+    float Closest = dot( Point - First, Point - First );
+    float Side = 1.0;
+
+    for ( int Index = 0, Prior = 3; Index < 4; Prior = Index, Index++ )
+    {
+        float2 Edge = Corners[ Prior ] - Corners[ Index ];
+        float2 Offset = Point - Corners[ Index ];
+
+        float2 Nearest = Offset - Edge * clamp( dot( Offset, Edge ) / max( dot( Edge, Edge ), 0.000001 ), 0.0, 1.0 );
+        Closest = min( Closest, dot( Nearest, Nearest ) );
+
+        bool3 Test = bool3( Point.y >= Corners[ Index ].y, Point.y < Corners[ Prior ].y, Edge.x * Offset.y > Edge.y * Offset.x );
+
+        if ( all( Test ) || all( !Test ) )
+            Side = -Side;
+    }
+
+    return Side * sqrt( Closest );
+}
 
 float4 MainFragment( CFragment Fragment ) : SV_Target
 {
@@ -187,6 +211,19 @@ float4 MainFragment( CFragment Fragment ) : SV_Target
 
             Field = Fragment.Extra.y >= 6.2831853 ? Band : max( Band, Slice );
         }
+        else if ( Fragment.Flags & 128 )
+        {
+            float2 Reach = Fragment.Extent * 2.0;
+
+            float2 First = ( Fragment.Extra.xy - 0.5 ) * Reach;
+            float2 Second = ( Fragment.Extra.zw - 0.5 ) * Reach;
+
+            float2 Third = ( Fragment.Shape.xy - 0.5 ) * Reach;
+            float2 Fourth = ( Fragment.Shape.zw - 0.5 ) * Reach;
+
+            Final.a *= saturate( 0.5 - PolygonField( Fragment.Local, First, Second, Third, Fourth ) );
+            Field = -1000.0;
+        }
         else
         {
             float2 Reach = abs( Fragment.Local ) - Fragment.Extent + Fragment.Shape.x;
@@ -226,7 +263,7 @@ struct CInstance
     float Softness;
     float Inflate;
 
-    uint Reserved;
+    float Spare;
 };
 
 layout( std430, binding = 0 ) readonly buffer CItems
@@ -244,7 +281,7 @@ out vec2 Local;
 out vec2 Extent;
 out vec2 Spot;
 
-flat out vec3 Shape;
+flat out vec4 Shape;
 flat out uint Flags;
 flat out vec4 Extra;
 
@@ -271,7 +308,7 @@ void main()
     Extent = Instance.Bounds.zw * 0.5 - Instance.Inflate;
    
     Spot = Instance.Source.xy + Ratio * Instance.Source.zw;
-    Shape = vec3( Instance.Rounding, Instance.Thickness, Instance.Softness );
+    Shape = vec4( Instance.Rounding, Instance.Thickness, Instance.Softness, Instance.Spare );
 
     Flags = Instance.Flags;
     Extra = Instance.Source;
@@ -288,7 +325,7 @@ in vec2 Local;
 in vec2 Extent;
 in vec2 Spot;
 
-flat in vec3 Shape;
+flat in vec4 Shape;
 flat in uint Flags;
 flat in vec4 Extra;
 
@@ -303,6 +340,30 @@ out vec4 Result;
 
 #define Fract fract
 #define AtlasSample( Where ) texture( Sheet, Where )
+
+float PolygonField( vec2 Point, vec2 First, vec2 Second, vec2 Third, vec2 Fourth )
+{
+    vec2 Corners[ 4 ] = vec2[ 4 ]( First, Second, Third, Fourth );
+
+    float Closest = dot( Point - First, Point - First );
+    float Side = 1.0;
+
+    for ( int Index = 0, Prior = 3; Index < 4; Prior = Index, Index++ )
+    {
+        vec2 Edge = Corners[ Prior ] - Corners[ Index ];
+        vec2 Offset = Point - Corners[ Index ];
+
+        vec2 Nearest = Offset - Edge * clamp( dot( Offset, Edge ) / max( dot( Edge, Edge ), 0.000001 ), 0.0, 1.0 );
+        Closest = min( Closest, dot( Nearest, Nearest ) );
+
+        bvec3 Test = bvec3( Point.y >= Corners[ Index ].y, Point.y < Corners[ Prior ].y, Edge.x * Offset.y > Edge.y * Offset.x );
+
+        if ( all( Test ) || all( not( Test ) ) )
+            Side = -Side;
+    }
+
+    return Side * sqrt( Closest );
+}
 
 void main()
 {
@@ -376,11 +437,24 @@ void main()
 
             Field = Extra.y >= 6.2831853 ? Band : max( Band, Slice );
         }
+        else if ( ( Flags & 128u ) != 0u )
+        {
+            vec2 Reach = Extent * 2.0;
+
+            vec2 First = ( Extra.xy - 0.5 ) * Reach;
+            vec2 Second = ( Extra.zw - 0.5 ) * Reach;
+
+            vec2 Third = ( Shape.xy - 0.5 ) * Reach;
+            vec2 Fourth = ( Shape.zw - 0.5 ) * Reach;
+
+            Final.a *= clamp( 0.5 - PolygonField( Local, First, Second, Third, Fourth ), 0.0, 1.0 );
+            Field = -1000.0;
+        }
         else
         {
             vec2 Reach = abs( Local ) - Extent + Shape.x;
             Field = length( max( Reach, 0.0 ) ) + min( max( Reach.x, Reach.y ), 0.0 ) - Shape.x;
-            
+
             if ( ( Flags & 2u ) != 0u )
             {
                 Field = abs( Field + Shape.y * 0.5 ) - Shape.y * 0.5;
@@ -415,7 +489,7 @@ struct CInstance
     float Softness;
     float Inflate;
 
-    uint Reserved;
+    float Spare;
 };
 
 layout( std430, set = 0, binding = 0 ) readonly buffer CItems
@@ -433,7 +507,7 @@ layout( location = 0 ) out vec4 Color;
 layout( location = 1 ) out vec2 Local;
 layout( location = 2 ) out vec2 Extent;
 layout( location = 3 ) out vec2 Spot;
-layout( location = 4 ) flat out vec3 Shape;
+layout( location = 4 ) flat out vec4 Shape;
 layout( location = 5 ) flat out uint Flags;
 layout( location = 6 ) flat out vec4 Extra;
 
@@ -459,7 +533,7 @@ void main()
     Extent = Instance.Bounds.zw * 0.5 - Instance.Inflate;
 
     Spot = Instance.Source.xy + Ratio * Instance.Source.zw;
-    Shape = vec3( Instance.Rounding, Instance.Thickness, Instance.Softness );
+    Shape = vec4( Instance.Rounding, Instance.Thickness, Instance.Softness, Instance.Spare );
 
     Flags = Instance.Flags;
     Extra = Instance.Source;
@@ -480,7 +554,7 @@ layout( location = 1 ) in vec2 Local;
 layout( location = 2 ) in vec2 Extent;
 layout( location = 3 ) in vec2 Spot;
 
-layout( location = 4 ) flat in vec3 Shape;
+layout( location = 4 ) flat in vec4 Shape;
 layout( location = 5 ) flat in uint Flags;
 layout( location = 6 ) flat in vec4 Extra;
 
@@ -495,6 +569,30 @@ layout( location = 0 ) out vec4 Result;
 
 #define Fract fract
 #define AtlasSample( Where ) texture( Sheet, Where )
+
+float PolygonField( vec2 Point, vec2 First, vec2 Second, vec2 Third, vec2 Fourth )
+{
+    vec2 Corners[ 4 ] = vec2[ 4 ]( First, Second, Third, Fourth );
+
+    float Closest = dot( Point - First, Point - First );
+    float Side = 1.0;
+
+    for ( int Index = 0, Prior = 3; Index < 4; Prior = Index, Index++ )
+    {
+        vec2 Edge = Corners[ Prior ] - Corners[ Index ];
+        vec2 Offset = Point - Corners[ Index ];
+
+        vec2 Nearest = Offset - Edge * clamp( dot( Offset, Edge ) / max( dot( Edge, Edge ), 0.000001 ), 0.0, 1.0 );
+        Closest = min( Closest, dot( Nearest, Nearest ) );
+
+        bvec3 Test = bvec3( Point.y >= Corners[ Index ].y, Point.y < Corners[ Prior ].y, Edge.x * Offset.y > Edge.y * Offset.x );
+
+        if ( all( Test ) || all( not( Test ) ) )
+            Side = -Side;
+    }
+
+    return Side * sqrt( Closest );
+}
 
 void main()
 {
@@ -568,6 +666,19 @@ void main()
 
             float Slice = ( abs( Turn - Half ) - Half ) * max( Span, 1.0 );
             Field = Extra.y >= 6.2831853 ? Band : max( Band, Slice );
+        }
+        else if ( ( Flags & 128u ) != 0u )
+        {
+            vec2 Reach = Extent * 2.0;
+
+            vec2 First = ( Extra.xy - 0.5 ) * Reach;
+            vec2 Second = ( Extra.zw - 0.5 ) * Reach;
+
+            vec2 Third = ( Shape.xy - 0.5 ) * Reach;
+            vec2 Fourth = ( Shape.zw - 0.5 ) * Reach;
+
+            Final.a *= clamp( 0.5 - PolygonField( Local, First, Second, Third, Fourth ), 0.0, 1.0 );
+            Field = -1000.0;
         }
         else
         {

@@ -31,7 +31,7 @@ public:
     float Softness = 0.75f;
 
     float Inflate = 0.0f;
-    unsigned int Reserved = 0;
+    float Spare = 0.0f;
 };
 
 class CBatch {
@@ -101,11 +101,17 @@ public:
 
     void Sector( CVector Middle, float Radius, float Start, float Sweep, float Inner, CColor Fill );
 
+    void Polygon( const CVector* Points, int Count, CColor Fill );
+    void PolygonBorder( const CVector* Points, int Count, CColor Tint, float Thickness );
+
     void Stroke( CRectangle Bounds, CVector From, CVector Till, CColor Tint, float Thickness );
     void Line( CVector From, CVector Till, CColor Tint, float Thickness );
 
     void Text( CVector Anchor, CColor Tint, const char* Message );
     void Write( CFont* Face, CVector Anchor, CColor Tint, const char* Message );
+
+    void Outlined( CVector Anchor, CColor Tint, CColor Border, float Thickness, const char* Message );
+    void WriteOutlined( CFont* Face, CVector Anchor, CColor Tint, CColor Border, float Thickness, const char* Message );
 
     void Image( CRectangle Bounds, unsigned long long Picture, CRectangle Source, CColor Tint, float Rounding = 0.0f );
     void Custom( CRectangle Bounds, void ( *Callback )( void* Stream, void* Detail ), void* Detail );

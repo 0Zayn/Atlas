@@ -29,6 +29,8 @@ public:
     const CGlyph* Fetch( unsigned int Codepoint );
     CVector Measure( const char* Message );
 
+    CRectangle Bounds( const char* Message );
+
     float Span( const char* Message, int Bytes );
     int Hit( const char* Message, float Across );
 

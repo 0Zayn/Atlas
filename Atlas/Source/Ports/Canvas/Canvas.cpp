@@ -252,6 +252,70 @@ void CCanvas::Sector( CVector Middle, float Radius, float Start, float Sweep, fl
     Item->Flags |= 64;
 }
 
+void CCanvas::Polygon( const CVector* Points, int Count, CColor Fill ) {
+    if ( !Points || Count < 3 || Count > 4 )
+        return;
+
+    CVector Corners[ 4 ] = { Points[ 0 ], Points[ 1 ], Points[ 2 ], Count > 3 ? Points[ 3 ] : Points[ 0 ] };
+
+    float Left = Corners[ 0 ].Horizontal;
+    float Top = Corners[ 0 ].Vertical;
+
+    float Right = Left;
+    float Bottom = Top;
+
+    for ( int Index = 1; Index < 4; Index++ ) {
+        if ( Corners[ Index ].Horizontal < Left )
+            Left = Corners[ Index ].Horizontal;
+
+        if ( Corners[ Index ].Vertical < Top )
+            Top = Corners[ Index ].Vertical;
+
+        if ( Corners[ Index ].Horizontal > Right )
+            Right = Corners[ Index ].Horizontal;
+
+        if ( Corners[ Index ].Vertical > Bottom )
+            Bottom = Corners[ Index ].Vertical;
+    }
+
+    CRectangle Box( Left, Top, Right - Left, Bottom - Top );
+
+    if ( Box.Width <= 0.0f || Box.Height <= 0.0f )
+        return;
+
+    CInstance* Item = Emit( Box.Inflate( 1.0f ), 0 );
+    if ( !Item )
+        return;
+
+    if ( Opacity < 1.0f )
+        Fill = Fill.Fade( Opacity );
+
+    Item->ColorStart = Fill.Pack( );
+    Item->ColorFinish = Item->ColorStart;
+
+    float Across = 1.0f / Box.Width;
+    float Down = 1.0f / Box.Height;
+
+    Item->Source = CRectangle( ( Corners[ 0 ].Horizontal - Box.Left ) * Across, ( Corners[ 0 ].Vertical - Box.Top ) * Down, ( Corners[ 1 ].Horizontal - Box.Left ) * Across, ( Corners[ 1 ].Vertical - Box.Top ) * Down );
+
+    Item->Rounding = ( Corners[ 2 ].Horizontal - Box.Left ) * Across;
+    Item->Thickness = ( Corners[ 2 ].Vertical - Box.Top ) * Down;
+
+    Item->Softness = ( Corners[ 3 ].Horizontal - Box.Left ) * Across;
+    Item->Spare = ( Corners[ 3 ].Vertical - Box.Top ) * Down;
+
+    Item->Inflate = 1.0f;
+    Item->Flags |= 128;
+}
+
+void CCanvas::PolygonBorder( const CVector* Points, int Count, CColor Tint, float Thickness ) {
+    if ( !Points || Count < 3 || Count > 4 )
+        return;
+
+    for ( int Index = 0; Index < Count; Index++ )
+        Line( Points[ Index ], Points[ ( Index + 1 ) % Count ], Tint, Thickness );
+}
+
 void CCanvas::Stroke( CRectangle Bounds, CVector From, CVector Till, CColor Tint, float Thickness ) {
     CInstance* Item = Emit( Bounds.Inflate( Thickness ), 0 );
     if ( !Item )
@@ -323,6 +387,27 @@ void CCanvas::Write( CFont* Face, CVector Anchor, CColor Tint, const char* Messa
     }
 }
 
+void CCanvas::Outlined( CVector Anchor, CColor Tint, CColor Border, float Thickness, const char* Message ) {
+    WriteOutlined( Font.get( ), Anchor, Tint, Border, Thickness, Message );
+}
+
+void CCanvas::WriteOutlined( CFont* Face, CVector Anchor, CColor Tint, CColor Border, float Thickness, const char* Message ) {
+    if ( !Face || !Message )
+        return;
+
+    if ( Thickness > 0.0f && Border.Alpha > 0 ) {
+        float Straight = Thickness;
+        float Slanted = Thickness * 0.70710678f;
+
+        CVector Offsets[ 8 ] = { CVector( -Straight, 0.0f ), CVector( Straight, 0.0f ), CVector( 0.0f, -Straight ), CVector( 0.0f, Straight ), CVector( -Slanted, -Slanted ), CVector( Slanted, -Slanted ), CVector( -Slanted, Slanted ), CVector( Slanted, Slanted ) };
+
+        for ( int Index = 0; Index < 8; Index++ )
+            Write( Face, Anchor + Offsets[ Index ], Border, Message );
+    }
+
+    Write( Face, Anchor, Tint, Message );
+}
+
 void CCanvas::Image( CRectangle Bounds, unsigned long long Picture, CRectangle Source, CColor Tint, float Rounding ) {
     CInstance* Item = Emit( Bounds, Picture );
     if ( !Item )
@@ -388,7 +473,6 @@ void CCanvas::Arrange( const int* Order, int Count ) {
 
         for ( const CBatch& Mark : Channel.Marks ) {
             bool Merge = !Joined.empty( ) && !Mark.Callback && !Joined.back( ).Callback && Joined.back( ).Image == Mark.Image && Joined.back( ).Effect == Mark.Effect;
-
             if ( Merge ) {
                 Joined.back( ).Count += Mark.Count;
                 continue;

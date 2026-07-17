@@ -231,6 +231,61 @@ CVector CFont::Measure( const char* Message ) {
     return CVector( Reach, LineSpan );
 }
 
+CRectangle CFont::Bounds( const char* Message ) {
+    if ( !Message )
+        return CRectangle( );
+
+    float Pen = 0.0f;
+    bool Any = false;
+
+    float Left = 0.0f;
+    float Top = 0.0f;
+
+    float Right = 0.0f;
+    float Bottom = 0.0f;
+
+    while ( *Message ) {
+        const CGlyph* Glyph = Fetch( DecodeCharacter( Message ) );
+
+        if ( Glyph->Span.Horizontal > 0.0f && Glyph->Span.Vertical > 0.0f ) {
+            float NearLeft = Pen + Glyph->Offset.Horizontal;
+            float NearTop = Glyph->Offset.Vertical;
+
+            float FarRight = NearLeft + Glyph->Span.Horizontal;
+            float FarBottom = NearTop + Glyph->Span.Vertical;
+
+            if ( !Any ) {
+                Left = NearLeft;
+                Top = NearTop;
+
+                Right = FarRight;
+                Bottom = FarBottom;
+
+                Any = true;
+            } else {
+                if ( NearLeft < Left )
+                    Left = NearLeft;
+
+                if ( NearTop < Top )
+                    Top = NearTop;
+
+                if ( FarRight > Right )
+                    Right = FarRight;
+
+                if ( FarBottom > Bottom )
+                    Bottom = FarBottom;
+            }
+        }
+
+        Pen += Glyph->Advance;
+    }
+
+    if ( !Any )
+        return CRectangle( );
+
+    return CRectangle( Left, Top, Right - Left, Bottom - Top );
+}
+
 float CFont::Span( const char* Message, int Bytes ) {
     if ( !Message || Bytes <= 0 )
         return 0.0f;
