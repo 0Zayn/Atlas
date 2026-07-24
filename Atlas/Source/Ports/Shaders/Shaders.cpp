@@ -700,6 +700,264 @@ void main()
 }
 )";
 
+static const char* const MetalPrologue = R"(#include <metal_stdlib>
+using namespace metal;
+)";
+
+static const char* const MetalVertex = R"(
+struct CInstance
+{
+    float4 Bounds;
+
+    float4 Clip;
+    float4 Source;
+
+    uint ColorStart;
+    uint ColorFinish;
+
+    float Rounding;
+    float Thickness;
+
+    uint Flags;
+
+    float Softness;
+    float Inflate;
+
+    float Spare;
+};
+
+struct CScreen
+{
+    float4 Projection;
+
+    uint Origin;
+    float Moment;
+};
+
+struct CFragment
+{
+    float4 Position [[position]];
+    float4 Color [[user(Color)]];
+
+    float2 Local [[user(Local)]];
+    float2 Extent [[user(Extent)]];
+    float2 Spot [[user(Spot)]];
+
+    float4 Shape [[user(Shape)]] [[flat]];
+    uint Flags [[user(Flags)]] [[flat]];
+    float4 Extra [[user(Extra)]] [[flat]];
+};
+
+float4 Unpack( uint Value )
+{
+    return float4( float( Value & 255u ), float( ( Value >> 8u ) & 255u ), float( ( Value >> 16u ) & 255u ), float( Value >> 24u ) ) / 255.0;
+}
+
+vertex CFragment MainVertex( uint Vertex [[vertex_id]], uint Item [[instance_id]], const device CInstance* Instances [[buffer(0)]], constant CScreen& Constants [[buffer(1)]] )
+{
+    CInstance Instance = Instances[ Item + Constants.Origin ];
+
+    float2 Corner = float2( float( Vertex & 1u ), float( Vertex >> 1u ) );
+    float2 Position = Instance.Bounds.xy + Corner * Instance.Bounds.zw;
+
+    float2 Limited = clamp( Position, Instance.Clip.xy, Instance.Clip.zw );
+    float2 Ratio = ( Limited - Instance.Bounds.xy ) / Instance.Bounds.zw;
+
+    float Blend = ( Instance.Flags & 4u ) != 0u ? Ratio.x : Ratio.y;
+    CFragment Fragment;
+
+    Fragment.Position = float4( Limited * Constants.Projection.xy + Constants.Projection.zw, 0.0, 1.0 );
+    Fragment.Color = mix( Unpack( Instance.ColorStart ), Unpack( Instance.ColorFinish ), float4( Blend ) );
+    Fragment.Local = Limited - Instance.Bounds.xy - Instance.Bounds.zw * 0.5;
+    Fragment.Extent = Instance.Bounds.zw * 0.5 - Instance.Inflate;
+    Fragment.Spot = Instance.Source.xy + Ratio * Instance.Source.zw;
+    Fragment.Shape = float4( Instance.Rounding, Instance.Thickness, Instance.Softness, Instance.Spare );
+
+    Fragment.Flags = Instance.Flags;
+    Fragment.Extra = Instance.Source;
+
+    return Fragment;
+}
+)";
+
+static const char* const MetalPixel = R"(
+struct CScreen
+{
+    float4 Projection;
+
+    uint Origin;
+    float Moment;
+};
+
+struct CFragment
+{
+    float4 Position [[position]];
+    float4 Color [[user(Color)]];
+
+    float2 Local [[user(Local)]];
+    float2 Extent [[user(Extent)]];
+    float2 Spot [[user(Spot)]];
+
+    float4 Shape [[user(Shape)]] [[flat]];
+    uint Flags [[user(Flags)]] [[flat]];
+    float4 Extra [[user(Extra)]] [[flat]];
+};
+
+#define Float2 float2
+#define Float3 float3
+#define Float4 float4
+
+#define Lerp mix
+#define Saturate saturate
+
+#define Fract fract
+#define AtlasSample( Where ) Sheet.sample( Smooth, Where )
+
+float PolygonField( float2 Point, float2 First, float2 Second, float2 Third, float2 Fourth )
+{
+    float2 Corners[ 4 ] = { First, Second, Third, Fourth };
+
+    float Closest = dot( Point - First, Point - First );
+    float Side = 1.0;
+
+    for ( int Index = 0, Prior = 3; Index < 4; Prior = Index, Index++ )
+    {
+        float2 Edge = Corners[ Prior ] - Corners[ Index ];
+        float2 Offset = Point - Corners[ Index ];
+
+        float2 Nearest = Offset - Edge * clamp( dot( Offset, Edge ) / max( dot( Edge, Edge ), 0.000001 ), 0.0, 1.0 );
+        Closest = min( Closest, dot( Nearest, Nearest ) );
+
+        bool Below = Point.y >= Corners[ Index ].y;
+        bool Above = Point.y < Corners[ Prior ].y;
+
+        bool Winding = Edge.x * Offset.y > Edge.y * Offset.x;
+
+        if ( ( Below && Above && Winding ) || ( !Below && !Above && !Winding ) )
+            Side = -Side;
+    }
+
+    return Side * sqrt( Closest );
+}
+
+fragment float4 MainFragment( CFragment Fragment [[stage_in]], constant CScreen& Constants [[buffer(0)]], texture2d< float > Sheet [[texture(0)]], sampler Smooth [[sampler(0)]] )
+{
+    float4 Color = Fragment.Color;
+    float4 Final = Color;
+
+    float2 Local = Fragment.Local;
+    float2 Extent = Fragment.Extent;
+
+    float2 Spot = Fragment.Spot;
+    float2 Screen = Fragment.Position.xy;
+
+    float4 Shape = Fragment.Shape;
+    float4 Extra = Fragment.Extra;
+
+    uint Flags = Fragment.Flags;
+    float Moment = Constants.Moment;
+
+    float Field = 0.0;
+
+    if ( ( Flags & 1u ) != 0u )
+    {
+        Final.a *= Sheet.sample( Smooth, Spot ).r;
+        Field = -1.0;
+    }
+    else
+    {
+        if ( ( Flags & 8u ) != 0u )
+        {
+            Final *= Sheet.sample( Smooth, Spot );
+        }
+
+        if ( ( Flags & 32u ) != 0u )
+        {
+            float2 Start = ( Extra.xy - 0.5 ) * Extent * 2.0;
+            float2 Finish = ( Extra.zw - 0.5 ) * Extent * 2.0;
+
+            float2 Path = Finish - Start;
+            float Along = saturate( dot( Local - Start, Path ) / max( dot( Path, Path ), 0.0001 ) );
+
+            Field = length( Local - Start - Path * Along ) - Shape.y * 0.5;
+        }
+        else if ( ( Flags & 16u ) != 0u )
+        {
+            float2 Point = Local;
+            float2 Limit = Extent;
+
+            uint Turn = uint( Extra.x + 0.5 );
+            if ( Turn == 1u )
+            {
+                Point = float2( Point.y, Point.x );
+                Limit = Limit.yx;
+            }
+
+            if ( Turn == 2u )
+            {
+                Point.y = -Point.y;
+            }
+
+            if ( Turn == 3u )
+            {
+                Point = float2( Point.y, -Point.x );
+                Limit = Limit.yx;
+            }
+
+            float Along = ( Point.y + Limit.y ) / max( Limit.y * 2.0, 0.001 );
+            Field = abs( Point.x ) - Limit.x * ( 1.0 - Along );
+        }
+        else if ( ( Flags & 64u ) != 0u )
+        {
+            float2 Point = Local;
+
+            float Span = length( Point );
+            float Outer = min( Extent.x, Extent.y );
+
+            float Inner = Extra.z * Outer;
+            float Turn = atan2( Point.y, Point.x ) - Extra.x;
+
+            Turn = Turn - floor( Turn / 6.2831853 ) * 6.2831853;
+
+            float Band = max( Span - Outer, Inner - Span );
+            float Half = Extra.y * 0.5;
+
+            float Slice = ( abs( Turn - Half ) - Half ) * max( Span, 1.0 );
+            Field = Extra.y >= 6.2831853 ? Band : max( Band, Slice );
+        }
+        else if ( ( Flags & 128u ) != 0u )
+        {
+            float2 Reach = Extent * 2.0;
+
+            float2 First = ( Extra.xy - 0.5 ) * Reach;
+            float2 Second = ( Extra.zw - 0.5 ) * Reach;
+
+            float2 Third = ( Shape.xy - 0.5 ) * Reach;
+            float2 Fourth = ( Shape.zw - 0.5 ) * Reach;
+
+            Final.a *= saturate( 0.5 - PolygonField( Local, First, Second, Third, Fourth ) );
+            Field = -1000.0;
+        }
+        else
+        {
+            float2 Reach = abs( Local ) - Extent + Shape.x;
+            Field = length( max( Reach, float2( 0.0 ) ) ) + min( max( Reach.x, Reach.y ), 0.0 ) - Shape.x;
+
+            if ( ( Flags & 2u ) != 0u )
+            {
+                Field = abs( Field + Shape.y * 0.5 ) - Shape.y * 0.5;
+            }
+        }
+
+        float Edge = max( Shape.z, 0.25 );
+        Final.a *= 1.0 - smoothstep( -Edge, Edge, Field );
+    }
+
+    /*ATLAS_EFFECT*/
+    return Final;
+}
+)";
+
 static std::string Splice( const char* Source, const std::string& Body ) {
     std::string Result = Source;
 
@@ -743,6 +1001,9 @@ std::string CShaders::Vertex( int Language ) const {
     if ( Language == ShaderGlsl )
         return std::string( "#version 430\n" ) + GlslVertex;
 
+    if ( Language == ShaderMetal )
+        return std::string( MetalPrologue ) + MetalVertex;
+
     return std::string( "#version 450\n" ) + VulkanVertex;
 }
 
@@ -755,6 +1016,9 @@ std::string CShaders::Pixel( unsigned int Effect, int Language ) const {
 
     if ( Language == ShaderGlsl )
         return std::string( "#version 430\n" ) + Splice( GlslPixel, Body );
+
+    if ( Language == ShaderMetal )
+        return std::string( MetalPrologue ) + Splice( MetalPixel, Body );
 
     return std::string( "#version 450\n" ) + Splice( VulkanPixel, Body );
 }

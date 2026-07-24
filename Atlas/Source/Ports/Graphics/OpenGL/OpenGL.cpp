@@ -1,22 +1,38 @@
+#if defined( _WIN32 )
+
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 
 #include <Windows.h>
+#include <gl/GL.h>
+
+#pragma comment( lib, "opengl32.lib" )
+
+#define ATLAS_GL_CALL __stdcall
+
+#elif defined( __APPLE__ )
+
+#include <OpenGL/gl3.h>
+
+#define ATLAS_GL_CALL
+
+#endif
 
 #include <cstddef>
 #include <cstring>
-#include <gl/GL.h>
 
 #include "Sheet.h"
 #include "OpenGL.h"
 #include "Context.h"
 #include "Shaders.h"
 
-#pragma comment( lib, "opengl32.lib" )
+#if defined( _WIN32 )
 
 typedef char GLchar;
 typedef ptrdiff_t GLsizeiptr;
 typedef ptrdiff_t GLintptr;
+
+#endif
 
 #define GL_FRAGMENT_SHADER 0x8B30
 #define GL_VERTEX_SHADER 0x8B31
@@ -37,37 +53,39 @@ typedef ptrdiff_t GLintptr;
 #define GL_BLEND_SRC_ALPHA 0x80CB
 #define GL_BLEND_DST_ALPHA 0x80CA
 
-static GLuint( __stdcall* AtlasCreateShader )( GLenum ) = nullptr;
-static void( __stdcall* AtlasShaderSource )( GLuint, GLsizei, const GLchar* const*, const GLint* ) = nullptr;
-static void( __stdcall* AtlasCompileShader )( GLuint ) = nullptr;
-static void( __stdcall* AtlasGetShaderiv )( GLuint, GLenum, GLint* ) = nullptr;
-static void( __stdcall* AtlasGetShaderInfoLog )( GLuint, GLsizei, GLsizei*, GLchar* ) = nullptr;
-static GLuint( __stdcall* AtlasCreateProgram )( void ) = nullptr;
-static void( __stdcall* AtlasAttachShader )( GLuint, GLuint ) = nullptr;
-static void( __stdcall* AtlasLinkProgram )( GLuint ) = nullptr;
-static void( __stdcall* AtlasGetProgramiv )( GLuint, GLenum, GLint* ) = nullptr;
-static void( __stdcall* AtlasGetProgramInfoLog )( GLuint, GLsizei, GLsizei*, GLchar* ) = nullptr;
-static void( __stdcall* AtlasDeleteShader )( GLuint ) = nullptr;
-static void( __stdcall* AtlasDeleteProgram )( GLuint ) = nullptr;
-static void( __stdcall* AtlasUseProgram )( GLuint ) = nullptr;
-static GLint( __stdcall* AtlasGetUniformLocation )( GLuint, const GLchar* ) = nullptr;
-static void( __stdcall* AtlasUniform4f )( GLint, GLfloat, GLfloat, GLfloat, GLfloat ) = nullptr;
-static void( __stdcall* AtlasUniform1ui )( GLint, GLuint ) = nullptr;
-static void( __stdcall* AtlasUniform1i )( GLint, GLint ) = nullptr;
-static void( __stdcall* AtlasUniform1f )( GLint, GLfloat ) = nullptr;
-static void( __stdcall* AtlasGenVertexArrays )( GLsizei, GLuint* ) = nullptr;
-static void( __stdcall* AtlasBindVertexArray )( GLuint ) = nullptr;
-static void( __stdcall* AtlasDeleteVertexArrays )( GLsizei, const GLuint* ) = nullptr;
-static void( __stdcall* AtlasGenBuffers )( GLsizei, GLuint* ) = nullptr;
-static void( __stdcall* AtlasBindBuffer )( GLenum, GLuint ) = nullptr;
-static void( __stdcall* AtlasBufferData )( GLenum, GLsizeiptr, const void*, GLenum ) = nullptr;
-static void( __stdcall* AtlasBufferSubData )( GLenum, GLintptr, GLsizeiptr, const void* ) = nullptr;
-static void( __stdcall* AtlasDeleteBuffers )( GLsizei, const GLuint* ) = nullptr;
-static void( __stdcall* AtlasBindBufferBase )( GLenum, GLuint, GLuint ) = nullptr;
-static void( __stdcall* AtlasDrawArraysInstanced )( GLenum, GLint, GLsizei, GLsizei ) = nullptr;
-static void( __stdcall* AtlasActiveTexture )( GLenum ) = nullptr;
-static void( __stdcall* AtlasBlendFuncSeparate )( GLenum, GLenum, GLenum, GLenum ) = nullptr;
-static void( __stdcall* AtlasBlendEquation )( GLenum ) = nullptr;
+static GLuint( ATLAS_GL_CALL* AtlasCreateShader )( GLenum ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasShaderSource )( GLuint, GLsizei, const GLchar* const*, const GLint* ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasCompileShader )( GLuint ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasGetShaderiv )( GLuint, GLenum, GLint* ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasGetShaderInfoLog )( GLuint, GLsizei, GLsizei*, GLchar* ) = nullptr;
+static GLuint( ATLAS_GL_CALL* AtlasCreateProgram )( void ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasAttachShader )( GLuint, GLuint ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasLinkProgram )( GLuint ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasGetProgramiv )( GLuint, GLenum, GLint* ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasGetProgramInfoLog )( GLuint, GLsizei, GLsizei*, GLchar* ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasDeleteShader )( GLuint ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasDeleteProgram )( GLuint ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasUseProgram )( GLuint ) = nullptr;
+static GLint( ATLAS_GL_CALL* AtlasGetUniformLocation )( GLuint, const GLchar* ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasUniform4f )( GLint, GLfloat, GLfloat, GLfloat, GLfloat ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasUniform1ui )( GLint, GLuint ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasUniform1i )( GLint, GLint ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasUniform1f )( GLint, GLfloat ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasGenVertexArrays )( GLsizei, GLuint* ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasBindVertexArray )( GLuint ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasDeleteVertexArrays )( GLsizei, const GLuint* ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasGenBuffers )( GLsizei, GLuint* ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasBindBuffer )( GLenum, GLuint ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasBufferData )( GLenum, GLsizeiptr, const void*, GLenum ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasBufferSubData )( GLenum, GLintptr, GLsizeiptr, const void* ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasDeleteBuffers )( GLsizei, const GLuint* ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasBindBufferBase )( GLenum, GLuint, GLuint ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasDrawArraysInstanced )( GLenum, GLint, GLsizei, GLsizei ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasActiveTexture )( GLenum ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasBlendFuncSeparate )( GLenum, GLenum, GLenum, GLenum ) = nullptr;
+static void( ATLAS_GL_CALL* AtlasBlendEquation )( GLenum ) = nullptr;
+
+#if defined( _WIN32 )
 
 static void* Resolve( const char* Name ) {
     void* Found = ( void* )wglGetProcAddress( Name );
@@ -81,38 +99,46 @@ static void* Resolve( const char* Name ) {
     return ( void* )GetProcAddress( Module, Name );
 }
 
+#define ATLAS_GL_RESOLVE( Name ) Resolve( #Name )
+
+#else
+
+#define ATLAS_GL_RESOLVE( Name ) ( void* )&Name
+
+#endif
+
 static bool Gather( ) {
-    AtlasCreateShader = ( GLuint( __stdcall* )( GLenum ) )Resolve( "glCreateShader" );
-    AtlasShaderSource = ( void( __stdcall* )( GLuint, GLsizei, const GLchar* const*, const GLint* ) )Resolve( "glShaderSource" );
-    AtlasCompileShader = ( void( __stdcall* )( GLuint ) )Resolve( "glCompileShader" );
-    AtlasGetShaderiv = ( void( __stdcall* )( GLuint, GLenum, GLint* ) )Resolve( "glGetShaderiv" );
-    AtlasGetShaderInfoLog = ( void( __stdcall* )( GLuint, GLsizei, GLsizei*, GLchar* ) )Resolve( "glGetShaderInfoLog" );
-    AtlasCreateProgram = ( GLuint( __stdcall* )( void ) )Resolve( "glCreateProgram" );
-    AtlasAttachShader = ( void( __stdcall* )( GLuint, GLuint ) )Resolve( "glAttachShader" );
-    AtlasLinkProgram = ( void( __stdcall* )( GLuint ) )Resolve( "glLinkProgram" );
-    AtlasGetProgramiv = ( void( __stdcall* )( GLuint, GLenum, GLint* ) )Resolve( "glGetProgramiv" );
-    AtlasGetProgramInfoLog = ( void( __stdcall* )( GLuint, GLsizei, GLsizei*, GLchar* ) )Resolve( "glGetProgramInfoLog" );
-    AtlasDeleteShader = ( void( __stdcall* )( GLuint ) )Resolve( "glDeleteShader" );
-    AtlasDeleteProgram = ( void( __stdcall* )( GLuint ) )Resolve( "glDeleteProgram" );
-    AtlasUseProgram = ( void( __stdcall* )( GLuint ) )Resolve( "glUseProgram" );
-    AtlasGetUniformLocation = ( GLint( __stdcall* )( GLuint, const GLchar* ) )Resolve( "glGetUniformLocation" );
-    AtlasUniform4f = ( void( __stdcall* )( GLint, GLfloat, GLfloat, GLfloat, GLfloat ) )Resolve( "glUniform4f" );
-    AtlasUniform1ui = ( void( __stdcall* )( GLint, GLuint ) )Resolve( "glUniform1ui" );
-    AtlasUniform1i = ( void( __stdcall* )( GLint, GLint ) )Resolve( "glUniform1i" );
-    AtlasUniform1f = ( void( __stdcall* )( GLint, GLfloat ) )Resolve( "glUniform1f" );
-    AtlasGenVertexArrays = ( void( __stdcall* )( GLsizei, GLuint* ) )Resolve( "glGenVertexArrays" );
-    AtlasBindVertexArray = ( void( __stdcall* )( GLuint ) )Resolve( "glBindVertexArray" );
-    AtlasDeleteVertexArrays = ( void( __stdcall* )( GLsizei, const GLuint* ) )Resolve( "glDeleteVertexArrays" );
-    AtlasGenBuffers = ( void( __stdcall* )( GLsizei, GLuint* ) )Resolve( "glGenBuffers" );
-    AtlasBindBuffer = ( void( __stdcall* )( GLenum, GLuint ) )Resolve( "glBindBuffer" );
-    AtlasBufferData = ( void( __stdcall* )( GLenum, GLsizeiptr, const void*, GLenum ) )Resolve( "glBufferData" );
-    AtlasBufferSubData = ( void( __stdcall* )( GLenum, GLintptr, GLsizeiptr, const void* ) )Resolve( "glBufferSubData" );
-    AtlasDeleteBuffers = ( void( __stdcall* )( GLsizei, const GLuint* ) )Resolve( "glDeleteBuffers" );
-    AtlasBindBufferBase = ( void( __stdcall* )( GLenum, GLuint, GLuint ) )Resolve( "glBindBufferBase" );
-    AtlasDrawArraysInstanced = ( void( __stdcall* )( GLenum, GLint, GLsizei, GLsizei ) )Resolve( "glDrawArraysInstanced" );
-    AtlasActiveTexture = ( void( __stdcall* )( GLenum ) )Resolve( "glActiveTexture" );
-    AtlasBlendFuncSeparate = ( void( __stdcall* )( GLenum, GLenum, GLenum, GLenum ) )Resolve( "glBlendFuncSeparate" );
-    AtlasBlendEquation = ( void( __stdcall* )( GLenum ) )Resolve( "glBlendEquation" );
+    AtlasCreateShader = ( GLuint( ATLAS_GL_CALL* )( GLenum ) )ATLAS_GL_RESOLVE( glCreateShader );
+    AtlasShaderSource = ( void( ATLAS_GL_CALL* )( GLuint, GLsizei, const GLchar* const*, const GLint* ) )ATLAS_GL_RESOLVE( glShaderSource );
+    AtlasCompileShader = ( void( ATLAS_GL_CALL* )( GLuint ) )ATLAS_GL_RESOLVE( glCompileShader );
+    AtlasGetShaderiv = ( void( ATLAS_GL_CALL* )( GLuint, GLenum, GLint* ) )ATLAS_GL_RESOLVE( glGetShaderiv );
+    AtlasGetShaderInfoLog = ( void( ATLAS_GL_CALL* )( GLuint, GLsizei, GLsizei*, GLchar* ) )ATLAS_GL_RESOLVE( glGetShaderInfoLog );
+    AtlasCreateProgram = ( GLuint( ATLAS_GL_CALL* )( void ) )ATLAS_GL_RESOLVE( glCreateProgram );
+    AtlasAttachShader = ( void( ATLAS_GL_CALL* )( GLuint, GLuint ) )ATLAS_GL_RESOLVE( glAttachShader );
+    AtlasLinkProgram = ( void( ATLAS_GL_CALL* )( GLuint ) )ATLAS_GL_RESOLVE( glLinkProgram );
+    AtlasGetProgramiv = ( void( ATLAS_GL_CALL* )( GLuint, GLenum, GLint* ) )ATLAS_GL_RESOLVE( glGetProgramiv );
+    AtlasGetProgramInfoLog = ( void( ATLAS_GL_CALL* )( GLuint, GLsizei, GLsizei*, GLchar* ) )ATLAS_GL_RESOLVE( glGetProgramInfoLog );
+    AtlasDeleteShader = ( void( ATLAS_GL_CALL* )( GLuint ) )ATLAS_GL_RESOLVE( glDeleteShader );
+    AtlasDeleteProgram = ( void( ATLAS_GL_CALL* )( GLuint ) )ATLAS_GL_RESOLVE( glDeleteProgram );
+    AtlasUseProgram = ( void( ATLAS_GL_CALL* )( GLuint ) )ATLAS_GL_RESOLVE( glUseProgram );
+    AtlasGetUniformLocation = ( GLint( ATLAS_GL_CALL* )( GLuint, const GLchar* ) )ATLAS_GL_RESOLVE( glGetUniformLocation );
+    AtlasUniform4f = ( void( ATLAS_GL_CALL* )( GLint, GLfloat, GLfloat, GLfloat, GLfloat ) )ATLAS_GL_RESOLVE( glUniform4f );
+    AtlasUniform1ui = ( void( ATLAS_GL_CALL* )( GLint, GLuint ) )ATLAS_GL_RESOLVE( glUniform1ui );
+    AtlasUniform1i = ( void( ATLAS_GL_CALL* )( GLint, GLint ) )ATLAS_GL_RESOLVE( glUniform1i );
+    AtlasUniform1f = ( void( ATLAS_GL_CALL* )( GLint, GLfloat ) )ATLAS_GL_RESOLVE( glUniform1f );
+    AtlasGenVertexArrays = ( void( ATLAS_GL_CALL* )( GLsizei, GLuint* ) )ATLAS_GL_RESOLVE( glGenVertexArrays );
+    AtlasBindVertexArray = ( void( ATLAS_GL_CALL* )( GLuint ) )ATLAS_GL_RESOLVE( glBindVertexArray );
+    AtlasDeleteVertexArrays = ( void( ATLAS_GL_CALL* )( GLsizei, const GLuint* ) )ATLAS_GL_RESOLVE( glDeleteVertexArrays );
+    AtlasGenBuffers = ( void( ATLAS_GL_CALL* )( GLsizei, GLuint* ) )ATLAS_GL_RESOLVE( glGenBuffers );
+    AtlasBindBuffer = ( void( ATLAS_GL_CALL* )( GLenum, GLuint ) )ATLAS_GL_RESOLVE( glBindBuffer );
+    AtlasBufferData = ( void( ATLAS_GL_CALL* )( GLenum, GLsizeiptr, const void*, GLenum ) )ATLAS_GL_RESOLVE( glBufferData );
+    AtlasBufferSubData = ( void( ATLAS_GL_CALL* )( GLenum, GLintptr, GLsizeiptr, const void* ) )ATLAS_GL_RESOLVE( glBufferSubData );
+    AtlasDeleteBuffers = ( void( ATLAS_GL_CALL* )( GLsizei, const GLuint* ) )ATLAS_GL_RESOLVE( glDeleteBuffers );
+    AtlasBindBufferBase = ( void( ATLAS_GL_CALL* )( GLenum, GLuint, GLuint ) )ATLAS_GL_RESOLVE( glBindBufferBase );
+    AtlasDrawArraysInstanced = ( void( ATLAS_GL_CALL* )( GLenum, GLint, GLsizei, GLsizei ) )ATLAS_GL_RESOLVE( glDrawArraysInstanced );
+    AtlasActiveTexture = ( void( ATLAS_GL_CALL* )( GLenum ) )ATLAS_GL_RESOLVE( glActiveTexture );
+    AtlasBlendFuncSeparate = ( void( ATLAS_GL_CALL* )( GLenum, GLenum, GLenum, GLenum ) )ATLAS_GL_RESOLVE( glBlendFuncSeparate );
+    AtlasBlendEquation = ( void( ATLAS_GL_CALL* )( GLenum ) )ATLAS_GL_RESOLVE( glBlendEquation );
 
     return AtlasCreateShader && AtlasShaderSource && AtlasCompileShader && AtlasGetShaderiv && AtlasCreateProgram && AtlasAttachShader && AtlasLinkProgram && AtlasGetProgramiv && AtlasDeleteShader && AtlasDeleteProgram && AtlasUseProgram && AtlasGetUniformLocation && AtlasUniform4f && AtlasUniform1ui && AtlasUniform1i && AtlasUniform1f && AtlasGenVertexArrays && AtlasBindVertexArray && AtlasDeleteVertexArrays && AtlasGenBuffers && AtlasBindBuffer && AtlasBufferData && AtlasBufferSubData && AtlasDeleteBuffers && AtlasBindBufferBase && AtlasDrawArraysInstanced && AtlasActiveTexture && AtlasBlendFuncSeparate && AtlasBlendEquation;
 }

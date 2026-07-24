@@ -1,0 +1,64 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": { "major": 3, "minor": 20, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "windows-debug",
+      "displayName": "Windows Debug (MSVC)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/Build/windows-debug",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ATLAS_BUILD_SAMPLE": "ON"
+      }
+    },
+    {
+      "name": "windows-release",
+      "displayName": "Windows Release (MSVC)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/Build/windows-release",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ATLAS_BUILD_SAMPLE": "ON"
+      }
+    },
+    {
+      "name": "macos-debug",
+      "displayName": "macOS Debug (Clang, Metal)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/Build/macos-debug",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ATLAS_DIRECTX11": "OFF",
+        "ATLAS_DIRECTX12": "OFF",
+        "ATLAS_METAL": "ON",
+        "ATLAS_OPENGL": "OFF",
+        "ATLAS_BUILD_SAMPLE": "OFF"
+      }
+    },
+    {
+      "name": "macos-release",
+      "displayName": "macOS Release (Clang, Metal)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/Build/macos-release",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ATLAS_DIRECTX11": "OFF",
+        "ATLAS_DIRECTX12": "OFF",
+        "ATLAS_METAL": "ON",
+        "ATLAS_OPENGL": "OFF",
+        "ATLAS_BUILD_SAMPLE": "OFF"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "windows-debug", "configurePreset": "windows-debug" },
+    { "name": "windows-release", "configurePreset": "windows-release" },
+    { "name": "macos-debug", "configurePreset": "macos-debug" },
+    { "name": "macos-release", "configurePreset": "macos-release" }
+  ]
+}

@@ -39,13 +39,41 @@ git clone https://github.com/0Zayn/Atlas.git
 cd Atlas
 ```
 
-Open `Atlas.slnx` in Visual Studio and build, or from a Developer prompt:
+**CMake** (also what CLion uses, it picks up the bundled presets automatically):
+
+```
+cmake --preset windows-release
+cmake --build --preset windows-release
+```
+
+**Visual Studio** - open `Atlas.slnx` and build, or from a Developer prompt:
 
 ```
 msbuild Sample/Sample.vcxproj -p:Configuration=Release -p:Platform=x64
 ```
 
-Run the demo from `Build/Release/Sample.exe`. Everything generated lives at the repo root: `Build/`, `Intermediates/`, and the redistributable SDK in `Package/`.
+Run the demo from `Build/Sample.exe`. Everything generated lives at the repo root: `Build/`, `Intermediates/`, and the redistributable SDK in `Package/`.
+
+### CMake options
+
+| Option | Default | What it does |
+| --- | --- | --- |
+| `ATLAS_DIRECTX11` | ON (Windows) | Build the DirectX 11 backend |
+| `ATLAS_DIRECTX12` | ON (Windows) | Build the DirectX 12 backend |
+| `ATLAS_METAL` | ON (Apple) | Build the Metal backend |
+| `ATLAS_OPENGL` | ON (off on Apple) | Build the OpenGL backend |
+| `ATLAS_VULKAN` | OFF | Build the Vulkan backend (needs the Vulkan SDK) |
+| `ATLAS_BUILD_SAMPLE` | ON (Windows) | Build the sample application |
+| `ATLAS_SHARED` | OFF | Build Atlas as a shared library instead of static |
+
+Consuming it from your own CMake project:
+
+```cmake
+add_subdirectory( Atlas )
+target_link_libraries( YourApp PRIVATE Atlas::Atlas )
+```
+
+> **Platform support:** Windows is fully supported and tested. macOS and iOS are supported through Metal, with CoreText for fonts and ImageIO for images, but that path has not yet been run on real hardware. Linux is not supported: it has no system font or image API, and adding one would mean a third party dependency. Configuring on any other system fails early with a clear message.
 
 ## Quick start
 

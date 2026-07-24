@@ -1,13 +1,30 @@
+#if defined( _WIN32 )
+
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 
 #include <Windows.h>
 
+#elif defined( __APPLE__ )
+
+#include <cstring>
+
+#include <objc/message.h>
+#include <objc/runtime.h>
+
+#include <CoreFoundation/CoreFoundation.h>
+#include <CoreGraphics/CoreGraphics.h>
+#include <TargetConditionals.h>
+
+#endif
+
 #include "Input.h"
 #include "Native.h"
 #include "Context.h"
 
+#if defined( _WIN32 )
 #pragma comment( lib, "user32.lib" )
+#endif
 
 bool CNative::Create( void* Window ) {
     Handle = Window;
@@ -20,6 +37,8 @@ void CNative::Destroy( ) {
     Handle = nullptr;
     Tracking = false;
 }
+
+#if defined( _WIN32 )
 
 float CNative::Scale( ) const {
     if ( !Handle )
@@ -213,3 +232,139 @@ void CNative::ClipboardSet( const char* Text ) const {
 
     CloseClipboard( );
 }
+
+#elif defined( __APPLE__ )
+
+static void* Shared( const char* Owner, const char* Message ) {
+    void* Target = ( void* )objc_getClass( Owner );
+
+    if ( !Target )
+        return nullptr;
+
+    typedef void* ( *CPlain )( void*, SEL );
+    return ( ( CPlain )objc_msgSend )( Target, sel_registerName( Message ) );
+}
+
+static std::string Gather( CFStringRef Text ) {
+    if ( !Text )
+        return std::string( );
+
+    CFIndex Length = CFStringGetLength( Text );
+    if ( Length <= 0 )
+        return std::string( );
+
+    CFIndex Room = CFStringGetMaximumSizeForEncoding( Length, kCFStringEncodingUTF8 ) + 1;
+    if ( Room <= 1 )
+        return std::string( );
+
+    std::string Result;
+    Result.resize( ( size_t )Room );
+
+    if ( !CFStringGetCString( Text, Result.data( ), Room, kCFStringEncodingUTF8 ) )
+        return std::string( );
+
+    Result.resize( strlen( Result.c_str( ) ) );
+    return Result;
+}
+
+float CNative::Scale( ) const {
+    if ( !Handle )
+        return 1.0f;
+
+#if TARGET_OS_IPHONE
+    void* Screen = Shared( "UIScreen", "mainScreen" );
+
+    if ( !Screen )
+        return 1.0f;
+
+    typedef double ( *CFactor )( void*, SEL );
+    double Factor = ( ( CFactor )objc_msgSend )( Screen, sel_registerName( "scale" ) );
+
+    if ( Factor <= 0.0 )
+        return 1.0f;
+
+    return ( float )Factor;
+#else
+    CGDisplayModeRef Mode = CGDisplayCopyDisplayMode( CGMainDisplayID( ) );
+
+    if ( !Mode )
+        return 1.0f;
+
+    double Dots = ( double )CGDisplayModeGetPixelWidth( Mode );
+    double Points = ( double )CGDisplayModeGetWidth( Mode );
+
+    CGDisplayModeRelease( Mode );
+
+    if ( Dots <= 0.0 || Points <= 0.0 )
+        return 1.0f;
+
+    return ( float )( Dots / Points );
+#endif
+}
+
+bool CNative::Translate( void* Window, unsigned int Message, unsigned long long Primary, long long Secondary ) {
+    ( void )Window;
+    ( void )Message;
+
+    ( void )Primary;
+    ( void )Secondary;
+
+    return false;
+}
+
+std::string CNative::ClipboardGet( ) const {
+#if TARGET_OS_IPHONE
+    void* Board = Shared( "UIPasteboard", "generalPasteboard" );
+
+    if ( !Board )
+        return std::string( );
+
+    typedef void* ( *CPlain )( void*, SEL );
+    CFStringRef Text = ( CFStringRef )( ( CPlain )objc_msgSend )( Board, sel_registerName( "string" ) );
+
+    return Gather( Text );
+#else
+    void* Board = Shared( "NSPasteboard", "generalPasteboard" );
+
+    if ( !Board )
+        return std::string( );
+
+    typedef void* ( *CTyped )( void*, SEL, CFStringRef );
+    CFStringRef Text = ( CFStringRef )( ( CTyped )objc_msgSend )( Board, sel_registerName( "stringForType:" ), CFSTR( "public.utf8-plain-text" ) );
+
+    return Gather( Text );
+#endif
+}
+
+void CNative::ClipboardSet( const char* Text ) const {
+    if ( !Text )
+        return;
+
+    CFStringRef Value = CFStringCreateWithCString( kCFAllocatorDefault, Text, kCFStringEncodingUTF8 );
+
+    if ( !Value )
+        return;
+
+#if TARGET_OS_IPHONE
+    void* Board = Shared( "UIPasteboard", "generalPasteboard" );
+
+    if ( Board ) {
+        typedef void ( *CWrite )( void*, SEL, CFStringRef );
+        ( ( CWrite )objc_msgSend )( Board, sel_registerName( "setString:" ), Value );
+    }
+#else
+    void* Board = Shared( "NSPasteboard", "generalPasteboard" );
+
+    if ( Board ) {
+        typedef long long ( *CClear )( void*, SEL );
+        ( ( CClear )objc_msgSend )( Board, sel_registerName( "clearContents" ) );
+
+        typedef bool ( *CWrite )( void*, SEL, CFStringRef, CFStringRef );
+        ( ( CWrite )objc_msgSend )( Board, sel_registerName( "setString:forType:" ), Value, CFSTR( "public.utf8-plain-text" ) );
+    }
+#endif
+
+    CFRelease( Value );
+}
+
+#endif

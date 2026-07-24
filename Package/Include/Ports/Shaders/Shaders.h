@@ -7,6 +7,7 @@
 inline constexpr int ShaderHlsl = 0;
 inline constexpr int ShaderGlsl = 1;
 inline constexpr int ShaderVulkan = 2;
+inline constexpr int ShaderMetal = 3;
 
 class CEffect {
 public:

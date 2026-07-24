@@ -1,3 +1,5 @@
+#if defined( _WIN32 )
+
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 
@@ -429,3 +431,202 @@ bool CPictures::Decode( const unsigned char* Bytes, size_t Length, std::vector< 
 
     return Loaded;
 }
+
+#elif defined( __APPLE__ )
+
+#include <cstring>
+
+#include <CoreFoundation/CoreFoundation.h>
+#include <CoreGraphics/CoreGraphics.h>
+#include <ImageIO/ImageIO.h>
+
+#include "Context.h"
+#include "Pictures.h"
+
+static bool Harvest( CGImageRef Picture, std::vector< unsigned char >& Pixels, int& Width, int& Height, int Longest ) {
+    if ( !Picture )
+        return false;
+
+    size_t Given = CGImageGetWidth( Picture );
+    size_t Tall = CGImageGetHeight( Picture );
+
+    if ( Given == 0 || Tall == 0 || Given > 16384 || Tall > 16384 )
+        return false;
+
+    unsigned int Across = ( unsigned int )Given;
+    unsigned int Down = ( unsigned int )Tall;
+
+    unsigned int Widest = Across > Down ? Across : Down;
+
+    if ( Longest > 0 && Widest > ( unsigned int )Longest ) {
+        unsigned int SmallAcross = Across * ( unsigned int )Longest / Widest;
+        unsigned int SmallDown = Down * ( unsigned int )Longest / Widest;
+
+        if ( SmallAcross == 0 )
+            SmallAcross = 1;
+
+        if ( SmallDown == 0 )
+            SmallDown = 1;
+
+        Across = SmallAcross;
+        Down = SmallDown;
+    }
+
+    if ( ( size_t )Across * Down > 67108864 )
+        return false;
+
+    try {
+        Pixels.resize( ( size_t )Across * Down * 4 );
+    } catch ( ... ) {
+        return false;
+    }
+
+    CGColorSpaceRef Space = CGColorSpaceCreateDeviceRGB( );
+    if ( !Space )
+        return false;
+
+    CGContextRef Painter = CGBitmapContextCreate( Pixels.data( ), Across, Down, 8, ( size_t )Across * 4, Space, kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big );
+    CGColorSpaceRelease( Space );
+
+    if ( !Painter )
+        return false;
+
+    CGRect Area = CGRectMake( 0.0, 0.0, ( CGFloat )Across, ( CGFloat )Down );
+
+    CGContextClearRect( Painter, Area );
+    CGContextSetBlendMode( Painter, kCGBlendModeCopy );
+
+    CGContextSetInterpolationQuality( Painter, kCGInterpolationHigh );
+    CGContextDrawImage( Painter, Area, Picture );
+
+    CGContextFlush( Painter );
+    CGContextRelease( Painter );
+
+    size_t Total = ( size_t )Across * Down;
+
+    for ( size_t Step = 0; Step < Total; Step++ ) {
+        unsigned char* Dot = Pixels.data( ) + Step * 4;
+        int Alpha = Dot[ 3 ];
+
+        if ( Alpha == 255 )
+            continue;
+
+        if ( Alpha == 0 ) {
+            Dot[ 0 ] = 0;
+            Dot[ 1 ] = 0;
+
+            Dot[ 2 ] = 0;
+            continue;
+        }
+
+        for ( int Channel = 0; Channel < 3; Channel++ ) {
+            int Level = Dot[ Channel ] * 255 / Alpha;
+            if ( Level > 255 )
+                Level = 255;
+
+            Dot[ Channel ] = ( unsigned char )Level;
+        }
+    }
+
+    Width = ( int )Across;
+    Height = ( int )Down;
+
+    return true;
+}
+
+bool CPictures::Load( const char* Path, std::vector< unsigned char >& Pixels, int& Width, int& Height, int Longest ) {
+    Width = 0;
+    Height = 0;
+
+    if ( !Path )
+        return false;
+
+    CFURLRef Location = CFURLCreateFromFileSystemRepresentation( kCFAllocatorDefault, ( const UInt8* )Path, ( CFIndex )strlen( Path ), false );
+
+    if ( !Location ) {
+        Context->Report( "Atlas could not read the picture path" );
+        return false;
+    }
+
+    CGImageSourceRef Reader = CGImageSourceCreateWithURL( Location, nullptr );
+    CFRelease( Location );
+
+    if ( !Reader ) {
+        Context->Report( "Atlas could not open the requested picture" );
+        return false;
+    }
+
+    CGImageRef Picture = CGImageSourceCreateImageAtIndex( Reader, 0, nullptr );
+    CFRelease( Reader );
+
+    bool Loaded = Harvest( Picture, Pixels, Width, Height, Longest );
+
+    if ( Picture )
+        CGImageRelease( Picture );
+
+    if ( !Loaded )
+        Context->Report( "Atlas could not decode the requested picture" );
+
+    return Loaded;
+}
+
+bool CPictures::Decode( const unsigned char* Bytes, size_t Length, std::vector< unsigned char >& Pixels, int& Width, int& Height, int Longest ) {
+    Width = 0;
+    Height = 0;
+
+    if ( !Bytes || Length == 0 || Length > 0x40000000 )
+        return false;
+
+    CFDataRef Block = CFDataCreate( kCFAllocatorDefault, ( const UInt8* )Bytes, ( CFIndex )Length );
+
+    if ( !Block )
+        return false;
+
+    CGImageSourceRef Reader = CGImageSourceCreateWithData( Block, nullptr );
+    CFRelease( Block );
+
+    bool Loaded = false;
+
+    if ( Reader ) {
+        CGImageRef Picture = CGImageSourceCreateImageAtIndex( Reader, 0, nullptr );
+        Loaded = Harvest( Picture, Pixels, Width, Height, Longest );
+
+        if ( Picture )
+            CGImageRelease( Picture );
+
+        CFRelease( Reader );
+    }
+
+    if ( !Loaded )
+        Context->Report( "Atlas could not decode the picture bytes given" );
+
+    return Loaded;
+}
+
+bool CPictures::VectorBytes( const unsigned char* Bytes, size_t Length, std::vector< unsigned char >& Pixels, int& Width, int& Height, int Size ) {
+    Width = 0;
+    Height = 0;
+
+    Pixels.clear( );
+
+    if ( !Bytes || Length == 0 || Length > 0x4000000 || Size <= 0 )
+        return false;
+
+    Context->Report( "Atlas cannot rasterize SVG on this platform" );
+    return false;
+}
+
+bool CPictures::Vector( const char* Path, std::vector< unsigned char >& Pixels, int& Width, int& Height, int Size ) {
+    Width = 0;
+    Height = 0;
+
+    Pixels.clear( );
+
+    if ( !Path || Size <= 0 )
+        return false;
+
+    Context->Report( "Atlas cannot rasterize SVG on this platform" );
+    return false;
+}
+
+#endif

@@ -1,14 +1,28 @@
+#if defined( _WIN32 )
+
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 
 #include <Windows.h>
+
+#elif defined( __APPLE__ )
+
+#include <cmath>
+
+#include <CoreFoundation/CoreFoundation.h>
+#include <CoreGraphics/CoreGraphics.h>
+#include <CoreText/CoreText.h>
+
+#endif
 
 #include "Font.h"
 #include "Sheet.h"
 #include "Format.h"
 #include "Context.h"
 
+#if defined( _WIN32 )
 #pragma comment( lib, "gdi32.lib" )
+#endif
 
 CFont::~CFont( ) {
     Destroy( );
@@ -50,18 +64,6 @@ void CFont::Destroy( ) {
     Leading = 0.0f;
 }
 
-void CFont::Release( ) {
-    if ( Surface ) {
-        DeleteDC( ( HDC )Surface );
-        Surface = nullptr;
-    }
-
-    for ( void* Handle : Handles )
-        DeleteObject( ( HFONT )Handle );
-
-    Handles.clear( );
-}
-
 void CFont::Rescale( float Factor ) {
     if ( Factor <= 0.0f )
         Factor = 1.0f;
@@ -74,6 +76,20 @@ void CFont::Rescale( float Factor ) {
 
     Release( );
     Prepare( );
+}
+
+#if defined( _WIN32 )
+
+void CFont::Release( ) {
+    if ( Surface ) {
+        DeleteDC( ( HDC )Surface );
+        Surface = nullptr;
+    }
+
+    for ( void* Handle : Handles )
+        DeleteObject( ( HFONT )Handle );
+
+    Handles.clear( );
 }
 
 bool CFont::Prepare( ) {
@@ -111,36 +127,6 @@ bool CFont::Prepare( ) {
     Leading = ( float )Metrics.tmInternalLeading;
 
     return true;
-}
-
-const CGlyph* CFont::Fetch( unsigned int Codepoint ) {
-    if ( Codepoint < 128 && Quick[ Codepoint ] )
-        return Quick[ Codepoint ];
-
-    auto Existing = Glyphs.find( Codepoint );
-
-    if ( Existing != Glyphs.end( ) ) {
-        if ( Codepoint < 128 )
-            Quick[ Codepoint ] = &Existing->second;
-
-        return &Existing->second;
-    }
-
-    CGlyph Glyph;
-
-    if ( !Rasterize( Codepoint, Glyph ) && Codepoint != '?' ) {
-        const CGlyph* Fallback = Fetch( '?' );
-        Glyphs[ Codepoint ] = *Fallback;
-    } else {
-        Glyphs[ Codepoint ] = Glyph;
-    }
-
-    const CGlyph* Result = &Glyphs[ Codepoint ];
-
-    if ( Codepoint < 128 )
-        Quick[ Codepoint ] = Result;
-
-    return Result;
 }
 
 bool CFont::Rasterize( unsigned int Codepoint, CGlyph& Glyph ) {
@@ -217,6 +203,191 @@ bool CFont::Rasterize( unsigned int Codepoint, CGlyph& Glyph ) {
     Glyph.Span = CVector( ( float )Across, ( float )Down );
 
     return true;
+}
+
+#elif defined( __APPLE__ )
+
+void CFont::Release( ) {
+    for ( void* Handle : Handles )
+        CFRelease( ( CTFontRef )Handle );
+
+    Handles.clear( );
+    Surface = nullptr;
+}
+
+bool CFont::Prepare( ) {
+    Release( );
+
+    int Pixels = ( int )( BaseHeight * Scale + 0.5f );
+    if ( Pixels < 4 )
+        Pixels = 4;
+
+    for ( const std::string& Family : Families ) {
+        CFStringRef Name = CFStringCreateWithCString( kCFAllocatorDefault, Family.c_str( ), kCFStringEncodingUTF8 );
+        if ( !Name )
+            continue;
+
+        CTFontRef Handle = CTFontCreateWithName( Name, ( CGFloat )Pixels, nullptr );
+        CFRelease( Name );
+
+        if ( !Handle )
+            continue;
+
+        if ( Weight >= 600 ) {
+            CTFontRef Heavy = CTFontCreateCopyWithSymbolicTraits( Handle, ( CGFloat )Pixels, nullptr, kCTFontTraitBold, kCTFontTraitBold );
+
+            if ( Heavy ) {
+                CFRelease( Handle );
+                Handle = Heavy;
+            }
+        }
+
+        Handles.push_back( ( void* )Handle );
+    }
+
+    if ( Handles.empty( ) ) {
+        Context->Report( "Atlas could not open any requested font family" );
+        return false;
+    }
+
+    CTFontRef Primary = ( CTFontRef )Handles[ 0 ];
+
+    float Rise = ( float )std::ceil( CTFontGetAscent( Primary ) );
+    float Drop = ( float )std::ceil( CTFontGetDescent( Primary ) );
+
+    float Gap = ( float )std::ceil( CTFontGetLeading( Primary ) );
+
+    Ascent = Rise;
+    LineSpan = Rise + Drop + Gap;
+
+    Leading = Rise + Drop - ( float )Pixels;
+    if ( Leading < 0.0f )
+        Leading = 0.0f;
+
+    return true;
+}
+
+bool CFont::Rasterize( unsigned int Codepoint, CGlyph& Glyph ) {
+    if ( Handles.empty( ) || Codepoint > 0xFFFF )
+        return false;
+
+    UniChar Wide = ( UniChar )Codepoint;
+
+    CTFontRef Chosen = nullptr;
+    CGGlyph Index = 0;
+
+    for ( void* Handle : Handles ) {
+        CGGlyph Found = 0;
+
+        if ( CTFontGetGlyphsForCharacters( ( CTFontRef )Handle, &Wide, &Found, 1 ) && Found != 0 ) {
+            Chosen = ( CTFontRef )Handle;
+            Index = Found;
+
+            break;
+        }
+    }
+
+    if ( !Chosen )
+        return false;
+
+    CGSize Advance = { };
+    CTFontGetAdvancesForGlyphs( Chosen, kCTFontOrientationHorizontal, &Index, &Advance, 1 );
+
+    Glyph.Advance = ( float )( int )( Advance.width + 0.5 );
+
+    CGRect Box = CTFontGetBoundingRectsForGlyphs( Chosen, kCTFontOrientationHorizontal, &Index, nullptr, 1 );
+
+    if ( CGRectIsNull( Box ) || CGRectIsEmpty( Box ) )
+        return true;
+
+    int BoxLeft = ( int )std::floor( Box.origin.x ) - 1;
+    int BoxBottom = ( int )std::floor( Box.origin.y ) - 1;
+
+    int BoxRight = ( int )std::ceil( Box.origin.x + Box.size.width ) + 1;
+    int BoxTop = ( int )std::ceil( Box.origin.y + Box.size.height ) + 1;
+
+    Glyph.Offset = CVector( ( float )BoxLeft, Ascent - ( float )BoxTop );
+
+    int Across = BoxRight - BoxLeft;
+    int Down = BoxTop - BoxBottom;
+
+    if ( Across <= 0 || Down <= 0 || Across > 4096 || Down > 4096 )
+        return true;
+
+    std::vector< unsigned char > Scratch( ( size_t )Across * Down, ( unsigned char )0 );
+
+    CGContextRef Painter = CGBitmapContextCreate( Scratch.data( ), ( size_t )Across, ( size_t )Down, 8, ( size_t )Across, nullptr, kCGImageAlphaOnly );
+    if ( !Painter )
+        return false;
+
+    CGContextSetShouldAntialias( Painter, true );
+    CGContextSetShouldSmoothFonts( Painter, false );
+
+    CGContextSetAllowsFontSubpixelPositioning( Painter, false );
+    CGContextSetShouldSubpixelPositionFonts( Painter, false );
+
+    CGContextSetAllowsFontSubpixelQuantization( Painter, false );
+    CGContextSetShouldSubpixelQuantizeFonts( Painter, false );
+
+    CGContextSetGrayFillColor( Painter, 1.0, 1.0 );
+
+    CGPoint Spot = CGPointMake( ( CGFloat )-BoxLeft, ( CGFloat )-BoxBottom );
+    CTFontDrawGlyphs( Chosen, &Index, &Spot, 1, Painter );
+
+    CGContextFlush( Painter );
+    CGContextRelease( Painter );
+
+    int Left = 0;
+    int Top = 0;
+
+    if ( !Sheet->Place( Across, Down, Left, Top ) ) {
+        Context->Report( "Atlas glyph sheet is full" );
+        return false;
+    }
+
+    for ( int Row = 0; Row < Down; Row++ ) {
+        unsigned char* Line = Sheet->Pixel( Left, Top + Row );
+
+        for ( int Column = 0; Column < Across; Column++ )
+            Line[ Column ] = Scratch[ ( size_t )Row * Across + Column ];
+    }
+
+    Glyph.Source = CRectangle( ( float )Left, ( float )Top, ( float )Across, ( float )Down );
+    Glyph.Span = CVector( ( float )Across, ( float )Down );
+
+    return true;
+}
+
+#endif
+
+const CGlyph* CFont::Fetch( unsigned int Codepoint ) {
+    if ( Codepoint < 128 && Quick[ Codepoint ] )
+        return Quick[ Codepoint ];
+
+    auto Existing = Glyphs.find( Codepoint );
+
+    if ( Existing != Glyphs.end( ) ) {
+        if ( Codepoint < 128 )
+            Quick[ Codepoint ] = &Existing->second;
+
+        return &Existing->second;
+    }
+
+    CGlyph Glyph;
+
+    if ( !Rasterize( Codepoint, Glyph ) && Codepoint != '?' ) {
+        const CGlyph* Fallback = Fetch( '?' );
+        Glyphs[ Codepoint ] = *Fallback;
+    } else {
+        Glyphs[ Codepoint ] = Glyph;
+    }
+
+    const CGlyph* Result = &Glyphs[ Codepoint ];
+
+    if ( Codepoint < 128 )
+        Quick[ Codepoint ] = Result;
+
+    return Result;
 }
 
 CVector CFont::Measure( const char* Message ) {

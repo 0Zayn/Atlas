@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
@@ -57,8 +58,8 @@ public:
     std::vector< CFault > Faults;
 
 private:
-    long long Frequency = 0;
-    long long Previous = 0;
+    std::chrono::steady_clock::time_point Previous;
+    bool Started = false;
 
     double SampleTime = 0.0;
     int SampleCount = 0;

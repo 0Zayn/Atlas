@@ -11,3 +11,9 @@ Intermediates/
 atlas.layout
 
 # Note: Package/ is the prebuilt SDK (headers + Atlas.lib) and is intentionally tracked.
+
+# CMake
+CMakeUserPresets.json
+cmake-build-*/
+.cache/
+compile_commands.json

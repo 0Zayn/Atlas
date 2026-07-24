@@ -1,21 +1,22 @@
 #include "Arena.h"
 #include "Context.h"
 
+#include <cstdio>
+
+#if defined( _WIN32 )
+
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 
 #include <Windows.h>
 
+#endif
+
 bool CContext::Create( ) {
-    LARGE_INTEGER Counter;
+    Previous = std::chrono::steady_clock::now( );
+    Started = true;
 
-    QueryPerformanceFrequency( &Counter );
-    Frequency = Counter.QuadPart;
-
-    QueryPerformanceCounter( &Counter );
-    Previous = Counter.QuadPart;
-
-    return Frequency > 0;
+    return Started;
 }
 
 void CContext::Destroy( ) {
@@ -32,14 +33,13 @@ void CContext::Destroy( ) {
 }
 
 void CContext::Begin( ) {
-    if ( Frequency <= 0 )
+    if ( !Started )
         return;
 
-    LARGE_INTEGER Counter;
-    QueryPerformanceCounter( &Counter );
+    std::chrono::steady_clock::time_point Moment = std::chrono::steady_clock::now( );
 
-    double Passed = ( double )( Counter.QuadPart - Previous ) / ( double )Frequency;
-    Previous = Counter.QuadPart;
+    double Passed = std::chrono::duration< double >( Moment - Previous ).count( );
+    Previous = Moment;
 
     Elapsed += Passed;
     DeltaTime = ( float )Passed;
@@ -151,8 +151,12 @@ void CContext::Report( const char* Message ) {
     if ( Faults.size( ) > 64 )
         Faults.erase( Faults.begin( ) );
 
+#if defined( _WIN32 )
     OutputDebugStringA( Message );
     OutputDebugStringA( "\n" );
+#else
+    std::fprintf( stderr, "%s\n", Message );
+#endif
 
     if ( Alarm )
         Alarm( Message );
